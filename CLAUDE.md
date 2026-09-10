@@ -9,6 +9,7 @@ CLAUDE.md
   - `.claude/rules/package-structure.md` (항상 로드)
   - `.claude/rules/api.md` (presentation 작업 시 로드)
   - `.claude/rules/testing.md` (테스트 파일 작업 시 로드. 새 테스트를 만들기 전에 먼저 읽을 것)
+  - `.claude/rules/git-workflow.md` (항상 로드. issue → 브랜치 → PR → merge)
 
 Tradeoff: These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
