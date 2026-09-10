@@ -11,6 +11,15 @@ CLAUDE.md
   - `.claude/rules/testing.md` (테스트 파일 작업 시 로드. 새 테스트를 만들기 전에 먼저 읽을 것)
   - `.claude/rules/git-workflow.md` (항상 로드. issue → 브랜치 → PR → merge)
 
+## 에이전트 문서 관리
+- CLAUDE.md, `.claude/rules/`, `.claude/skills/`는 Claude가 작업 중 수시로 채운다. 사용자에게 따로 묻지 않는다.
+  - 새 컨벤션을 사용자와 합의했을 때 → 해당 rules 파일
+  - 같은 설명·수정 요청이 반복될 때 → rules
+  - 같은 작업 절차가 반복될 때 → skill
+- 합의된 내용과 코드에서 확인한 사실만 적는다. 추측성 규칙은 넣지 않는다.
+- CLAUDE.md는 짧게 유지한다. 규칙은 rules, 절차는 skills로 보낸다.
+- 갱신은 진행 중인 작업 브랜치에 함께 커밋하고, PR의 background에 무엇을 바꿨는지 적는다.
+
 Tradeoff: These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
 1. Think Before Coding
