@@ -9,7 +9,7 @@ paths:
 |---|---|---|
 | domain | 순수 JUnit (Spring 없이) | Entity/VO 생성, 상태 변경, 불변식 위반 시 ErrorCode |
 | application | JUnit + Mockito. repository·`port/out` 인터페이스를 mock | Service 흐름, 예외 분기 |
-| presentation | `@WebMvcTest` + UseCase mock | 요청 검증, HTTP status, 응답 형식 |
+| presentation | `@WebMvcTest` + Service mock | 요청 검증, HTTP status, 응답 형식 |
 | infrastructure | `@DataJpaTest` 등 슬라이스 테스트 | 커스텀 쿼리, adapter의 DTO 변환 |
 
 - `@SpringBootTest`는 계층을 넘는 흐름 확인이 꼭 필요할 때만 쓴다.

@@ -17,7 +17,8 @@ paths:
 
 ## Controller
 
-- `application/port/in`의 UseCase 인터페이스에만 의존한다.
+- 사용자용 Controller는 같은 도메인의 Service에 의존한다.
+- `/internal/v1` Controller(서비스 분리 후)는 `application/port/in`의 UseCase에 의존한다.
 - 반환 타입은 `ResponseEntity<ApiResponse<XxxResponse>>`. Entity나 Result를 그대로 반환하지 않는다.
 - 요청은 `@Valid` + Request record의 Bean Validation으로 형식만 검증한다. 비즈니스 규칙 검증은 domain에서 한다.
 

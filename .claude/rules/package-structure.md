@@ -12,8 +12,8 @@
 └── <domain>/
     ├── presentation/             # Controller, errorhandler
     │   └── dto/request, dto/response
-    ├── application/              # XxxCommandService, XxxQueryService (port.in 구현)
-    │   ├── port/in/              # inbound: XxxUseCase
+    ├── application/              # XxxCommandService, XxxQueryService
+    │   ├── port/in/              # inbound: XxxUseCase (타 도메인 전용 입구)
     │   ├── port/out/             # outbound: XxxPort (infrastructure가 구현)
     │   └── dto/command, dto/result
     ├── domain/
@@ -33,16 +33,20 @@
 
 ## Port
 
-- inbound `port/in/XxxUseCase`: 도메인이 외부에 제공하는 기능. Controller, 메시지 리스너, 타 도메인 adapter는 Service 클래스가 아니라 UseCase 인터페이스에 의존한다.
+- inbound `port/in/XxxUseCase`: 타 도메인이 이 도메인을 호출하는 입구만 둔다 (코드 참조, 타 도메인 이벤트 수신). `port/in` 목록이 곧 도메인 간 계약이다.
+- 사용자 요청은 UseCase가 아니다. Controller는 같은 도메인의 Service를 직접 호출한다.
+- 같은 기능을 사용자와 타 도메인이 모두 쓰면 Service가 UseCase를 구현하고, Controller는 Service를 그대로 호출한다.
 - UseCase는 기능 단위로 나누고 이름은 동사로 시작한다 (`CreateMatchingUseCase`, `AcceptMatchingUseCase`). 하나의 Service가 여러 UseCase를 구현해도 된다.
 - UseCase 구현만을 위한 별도 facade/adapter 클래스는 만들지 않는다. 여러 Service를 조합해야 할 때만 둔다.
+- 서비스 분리 시 UseCase 하나가 `/internal/v1` API 하나가 된다. 호출 측 adapter는 HTTP 클라이언트로 교체한다.
 - outbound `port/out/XxxPort`: application이 필요로 하는 외부 기능. 기술 이름이 아니라 역할로 이름 짓는다 (`UserSettingPort`, `MatchingEventPort`).
 
 ## 도메인 간 참조
 
 - 다른 도메인을 import할 수 있는 곳은 infrastructure 구현체뿐이고, 대상은 상대 도메인의 `port/in` UseCase와 그 Command/Result로 한정한다.
-- 흐름: `A.application` → `A.application.port.out.XxxPort` ← `A.infrastructure.client.XxxAdapter` → `B.application.port.in.XxxUseCase`
-- 상대 도메인의 Result는 adapter 안에서 A의 DTO로 변환한다. 서비스 분리 시 adapter만 HTTP 클라이언트로 교체하면 되도록 한다.
+- 코드 참조: `A.application` → `A.application.port.out.XxxPort` ← `A.infrastructure.client.XxxAdapter` → `B.application.port.in.XxxUseCase`
+- 이벤트: `B.infrastructure.message`의 리스너가 A의 이벤트를 받아 `B.application.port.in.XxxUseCase`를 호출한다.
+- 상대 도메인의 Result는 adapter 안에서 A의 DTO로 변환한다.
 
 ## DTO
 
