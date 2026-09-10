@@ -1,5 +1,15 @@
 CLAUDE.md
 
+## Project: tyt-be
+- Spring Boot 4.0.x, Java 17, Gradle. 모듈: `tyt/`
+- 빌드/테스트: `tyt/`에서 `./gradlew build`, `./gradlew test`
+- base package: `com.tyt`
+- 들여쓰기는 tab
+- 도메인별 DDD 4계층, application·domain ↔ infrastructure는 반드시 DIP. 상세 규칙:
+  - `.claude/rules/package-structure.md` (항상 로드)
+  - `.claude/rules/api.md` (presentation 작업 시 로드)
+  - `.claude/rules/testing.md` (테스트 파일 작업 시 로드. 새 테스트를 만들기 전에 먼저 읽을 것)
+
 Tradeoff: These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
 1. Think Before Coding

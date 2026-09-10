@@ -1,0 +1,67 @@
+# Package structure
+
+도메인별 DDD 4계층. 각 도메인은 언제든 별도 서비스로 분리될 수 있어야 하며, 아래 규칙은 모두 이 목표를 위한 것이다.
+
+## 레이아웃
+
+`{base}`는 CLAUDE.md의 base package.
+
+```
+{base}
+├── common/                       # 유틸 + 비즈니스 로직 없는 공통 규약만
+└── <domain>/
+    ├── presentation/             # Controller, errorhandler
+    │   └── dto/request, dto/response
+    ├── application/              # XxxCommandService, XxxQueryService (port.in 구현)
+    │   ├── port/in/              # inbound: XxxUseCase
+    │   ├── port/out/             # outbound: XxxPort (infrastructure가 구현)
+    │   └── dto/command, dto/result
+    ├── domain/
+    │   ├── model/                # @Entity, VO(@Embeddable)
+    │   ├── repository/           # repository 인터페이스
+    │   ├── constants/            # enum
+    │   └── exception/            # <Domain>ErrorCode
+    └── infrastructure/           # 기술별 하위 패키지: persistence/, client/, message/, redis/, config/ ...
+```
+
+## 의존 방향
+
+- presentation → application → domain. 역방향 import 금지.
+- application·domain과 infrastructure 사이는 반드시 DIP. application·domain은 infrastructure를 import하지 않는다.
+  - DB: `domain/repository` 인터페이스 ← `infrastructure/persistence`의 `XxxRepositoryImpl`
+  - 그 외 외부 기술(Redis, Kafka, 외부 API, 타 도메인 등): `application/port/out`의 `XxxPort` ← `infrastructure`의 `XxxAdapter`
+
+## Port
+
+- inbound `port/in/XxxUseCase`: 도메인이 외부에 제공하는 기능. Controller, 메시지 리스너, 타 도메인 adapter는 Service 클래스가 아니라 UseCase 인터페이스에 의존한다.
+- UseCase는 기능 단위로 나누고 이름은 동사로 시작한다 (`CreateMatchingUseCase`, `AcceptMatchingUseCase`). 하나의 Service가 여러 UseCase를 구현해도 된다.
+- UseCase 구현만을 위한 별도 facade/adapter 클래스는 만들지 않는다. 여러 Service를 조합해야 할 때만 둔다.
+- outbound `port/out/XxxPort`: application이 필요로 하는 외부 기능. 기술 이름이 아니라 역할로 이름 짓는다 (`UserSettingPort`, `MatchingEventPort`).
+
+## 도메인 간 참조
+
+- 다른 도메인을 import할 수 있는 곳은 infrastructure 구현체뿐이고, 대상은 상대 도메인의 `port/in` UseCase와 그 Command/Result로 한정한다.
+- 흐름: `A.application` → `A.application.port.out.XxxPort` ← `A.infrastructure.client.XxxAdapter` → `B.application.port.in.XxxUseCase`
+- 상대 도메인의 Result는 adapter 안에서 A의 DTO로 변환한다. 서비스 분리 시 adapter만 HTTP 클라이언트로 교체하면 되도록 한다.
+
+## DTO
+
+- 계층별로 따로 만든다. 모두 record.
+  - presentation: `XxxRequest`, `XxxResponse`
+  - application: `XxxCommand`, `XxxResult`
+  - infrastructure: 외부 연동용 자체 DTO
+- 변환 메서드는 변환 결과 쪽에 둔다: `request.toCommand()`, `XxxResult.from(entity)`, `XxxResponse.from(result)`.
+- Entity와 VO는 application 밖으로 나가지 않는다. Result에 Entity/VO를 담지 않는다.
+- enum은 모든 계층에서 공유해도 된다.
+
+## domain
+
+- 생성은 정적 팩토리(`create`, `of`), 상태 변경은 의도가 드러나는 메서드(`accept()`, `close()`). setter 금지.
+- 불변식 검증은 Entity/VO 내부에서 하고, 위반 시 `BusinessException(<Domain>ErrorCode)`.
+- JPA용 기본 생성자는 `@NoArgsConstructor(access = AccessLevel.PROTECTED)`.
+
+## common
+
+- 허용: 유틸, 비즈니스 로직 없는 공통 규약(`ApiResponse`, `ErrorCode` 인터페이스, `BusinessException`, 전역 예외 처리, 감사 필드 base entity).
+- common은 어떤 도메인도 import하지 않는다.
+- 도메인 간 코드 중복은 기본적으로 허용한다. 중복이 많이 쌓였을 때만 common 이동을 제안하고, 임의로 옮기지 않는다.
