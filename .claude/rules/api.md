@@ -25,6 +25,6 @@ paths:
 ## 응답과 예외
 
 - 성공: `ApiResponse.success(SuccessCode, data)`. 도메인 전용 성공 코드는 `presentation/dto/response/constants/<Domain>SuccessCode`.
-- 실패: `BusinessException(<Domain>ErrorCode)`를 던지고, common의 전역 예외 처리에서 `ApiResponse.error(...)`로 변환한다.
-- `<Domain>ErrorCode`는 `domain/exception`에 두고 `ErrorCode`를 구현하며, HTTP status와 메시지를 가진다.
+- 실패: `BusinessException(<Domain>ErrorCode)`를 던지고, `common.web`의 전역 예외 처리에서 `ApiResponse.error(...)`로 변환한다.
+- `<Domain>ErrorCode`는 `domain/exception`에 두고 `ErrorCode`를 구현하며, `ErrorType`과 메시지를 가진다. `ErrorType` → `HttpStatus` 변환은 전역 예외 처리에서만 한다.
 - 특정 Controller 전용 처리가 필요할 때만 `presentation/errorhandler`에 `@RestControllerAdvice(assignableTypes = XxxController.class)`를 둔다.

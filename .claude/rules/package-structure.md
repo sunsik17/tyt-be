@@ -20,7 +20,7 @@
     │   ├── model/                # @Entity, VO(@Embeddable)
     │   ├── repository/           # repository 인터페이스
     │   ├── constants/            # enum
-    │   └── exception/            # <Domain>ErrorCode
+    │   └── exception/            # <Domain>ErrorCode (ErrorType + 메시지)
     └── infrastructure/           # 기술별 하위 패키지: persistence/, client/, message/, redis/, config/ ...
 ```
 
@@ -62,10 +62,16 @@
 
 - 생성은 정적 팩토리(`create`, `of`), 상태 변경은 의도가 드러나는 메서드(`accept()`, `close()`). setter 금지.
 - 불변식 검증은 Entity/VO 내부에서 하고, 위반 시 `BusinessException(<Domain>ErrorCode)`.
+- `<Domain>ErrorCode`는 `ErrorType`과 메시지만 가진다. `HttpStatus` 등 전달 방식(HTTP, 메시지)에 속한 타입은 domain에서 import하지 않는다.
 - JPA용 기본 생성자는 `@NoArgsConstructor(access = AccessLevel.PROTECTED)`.
 
 ## common
 
-- 허용: 유틸, 비즈니스 로직 없는 공통 규약(`ApiResponse`, `ErrorCode` 인터페이스, `BusinessException`, 전역 예외 처리, 감사 필드 base entity).
+- 유틸과 비즈니스 로직 없는 공통 규약만 두고, 관심사별로 나눈다.
+  - `common/exception`: `ErrorType`(INVALID, NOT_FOUND, CONFLICT, FORBIDDEN 등), `ErrorCode` 인터페이스, `BusinessException`
+  - `common/entity`: 감사 필드 base entity
+  - `common/web`: `ApiResponse`, `SuccessCode`, 전역 예외 처리(`ErrorType` → `HttpStatus` 변환)
+  - `common/util`
+- domain·application은 `common.exception`, `common.entity`, `common.util`만 import한다. `common.web`은 presentation 전용.
 - common은 어떤 도메인도 import하지 않는다.
 - 도메인 간 코드 중복은 기본적으로 허용한다. 중복이 많이 쌓였을 때만 common 이동을 제안하고, 임의로 옮기지 않는다.
