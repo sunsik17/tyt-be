@@ -15,13 +15,14 @@
     ├── application/              # XxxCommandService, XxxQueryService
     │   ├── port/in/              # inbound: XxxUseCase (타 도메인 전용 입구)
     │   ├── port/out/             # outbound: XxxPort (infrastructure가 구현)
+    │   ├── event/                # 타 도메인에 알리는 이벤트 (발행 도메인 소유)
     │   └── dto/command, dto/result
     ├── domain/
     │   ├── model/                # @Entity, VO(@Embeddable)
     │   ├── repository/           # repository 인터페이스
     │   ├── constants/            # enum
     │   └── exception/            # <Domain>ErrorCode (ErrorType + 메시지)
-    └── infrastructure/           # 기술별 하위 패키지: persistence/, client/, message/, redis/, config/ ...
+    └── infrastructure/           # 기술별 하위 패키지: persistence/, client/, event/, redis/, config/ ...
 ```
 
 ## 의존 방향
@@ -43,10 +44,21 @@
 
 ## 도메인 간 참조
 
-- 다른 도메인을 import할 수 있는 곳은 infrastructure 구현체뿐이고, 대상은 상대 도메인의 `port/in` UseCase와 그 Command/Result로 한정한다.
+- 다른 도메인을 import할 수 있는 곳은 infrastructure 구현체뿐이고, 대상은 상대 도메인의 `port/in` UseCase와 그 Command/Result, `application/event`로 한정한다.
 - 코드 참조: `A.application` → `A.application.port.out.XxxPort` ← `A.infrastructure.client.XxxAdapter` → `B.application.port.in.XxxUseCase`
-- 이벤트: `B.infrastructure.message`의 리스너가 A의 이벤트를 받아 `B.application.port.in.XxxUseCase`를 호출한다.
-- 상대 도메인의 Result는 adapter 안에서 A의 DTO로 변환한다.
+- 이벤트: `B.infrastructure.event`의 리스너가 `A.application.event`의 이벤트를 받아 `B.application.port.in.XxxUseCase`를 호출한다.
+- 상대 도메인의 Result·이벤트는 adapter/리스너 안에서 자기 DTO(Command)로 변환한다.
+
+## 이벤트 (Spring Event)
+
+- 이벤트는 발행 도메인의 `application/event`에 record로 두고, 과거형으로 이름 짓는다 (`MatchingCreatedEvent`).
+- ID, 원시 타입, enum만 담는다. Entity/VO 금지 (Kafka 전환 시 그대로 직렬화할 수 있도록).
+- 발행: Service는 `port/out/XxxEventPort`로 발행하고, `infrastructure/event/XxxEventAdapter`가 `ApplicationEventPublisher`로 구현한다. Kafka 도입 시 adapter만 교체한다.
+- 도메인 간 이벤트는 기본적으로 결과적 일관성으로 처리한다.
+  - 리스너: `@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)`
+  - 리스너가 호출하는 UseCase 구현: `@Transactional(propagation = Propagation.REQUIRES_NEW)`. 없으면 AFTER_COMMIT 시점이라 수신 측 DB 변경이 저장되지 않는다.
+- 같은 트랜잭션(`@EventListener`)은 두 도메인 변경이 반드시 원자적이어야 할 때만 쓰고, 그 이유와 "서비스 분리 시 saga 필요"를 주석으로 남긴다.
+- AFTER_COMMIT 방식은 수신 실패 시 이벤트가 유실된다. 유실되면 안 되는 이벤트가 생기면 Spring Modulith(Event Publication Registry) 도입을 제안한다.
 
 ## DTO
 
