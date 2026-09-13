@@ -7,7 +7,7 @@
    - prefix: `feat`(기능), `fix`(버그), `refactor`(리팩터링), `test`(테스트), `docs`(문서), `chore`(빌드·설정)
    - 작업 이름은 영문 kebab-case
 3. 작업을 커밋하고 브랜치를 push한다.
-   - **커밋하기 전에 멈춘다.** 변경을 워킹 트리에 둔 채(스테이징도 하지 않는다) 사용자에게 알리고, 사용자가 IDE에서 diff를 확인하고 OK하면 커밋한다. 커밋을 여러 개로 나눌 계획이면 어떻게 나눌지도 함께 알린다.
+   - **커밋하기 전에 멈춘다.** 변경을 스테이징까지 해두고(새 파일이 Unversioned로 흩어지지 않고 한 묶음으로 보인다) 커밋은 하지 않은 채 사용자에게 알린다. 사용자가 IDE에서 diff를 확인하고 OK하면 커밋한다. 커밋을 여러 개로 나눌 계획이면 어떻게 나눌지도 함께 알린다.
    - 큰 작업이라도 한 커밋에 몰지 않는다. 커밋 하나에는 하나의 논리적 변경만 담고, 커밋 메시지만 보고 무엇이 바뀌었는지 알 수 있어야 한다.
 4. PR을 만든다. base는 `develop`이다 (레포 기본 브랜치라 `gh pr create`가 자동으로 잡는다). 본문은 `.github/pull_request_template.md` 형식(summary / change / background or etc / test)을 따른다.
    - 제목은 `<prefix>: <제목>`. prefix는 작업 브랜치의 prefix와 같다 (예: `docs: 커밋 분리 규칙 추가`). squash merge 시 이 제목이 develop의 커밋 메시지가 된다.
