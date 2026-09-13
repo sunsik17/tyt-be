@@ -1,3 +1,14 @@
 spring:
   application:
     name: tyt
+  datasource:
+    url: jdbc:h2:mem:tyt
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
