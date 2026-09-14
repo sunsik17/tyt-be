@@ -16,6 +16,7 @@ public final class HttpStatusResolver {
 	public static HttpStatus resolve(ErrorType errorType) {
 		return switch (errorType) {
 			case INVALID -> HttpStatus.BAD_REQUEST;
+			case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
 			case NOT_FOUND -> HttpStatus.NOT_FOUND;
 			case CONFLICT -> HttpStatus.CONFLICT;
 			case FORBIDDEN -> HttpStatus.FORBIDDEN;
