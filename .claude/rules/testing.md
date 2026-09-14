@@ -23,3 +23,6 @@ paths:
 - `@WebMvcTest`는 `org.springframework.boot.webmvc.test.autoconfigure`에 있고 스타터는 `spring-boot-starter-webmvc-test`. Service는 `@MockitoBean`으로 대체한다.
 - 테스트는 Gradle에서 `spring.profiles.active=test`로 돈다(build.gradle의 `systemProperty`). 운영에서 환경변수로 받는 설정값(`KAKAO_APP_ID`, `JWT_SECRET`)은 `src/test/resources/application-test.yaml`에 테스트용 값을 둔다. 새 환경변수를 추가하면 여기에도 넣어야 `contextLoads`가 뜬다.
 - 외부 API adapter는 슬라이스 없이 `MockRestServiceServer.bindTo(RestClient.Builder)`로 테스트한다.
+- `@WebMvcTest`에서 Spring Security를 쓰려면 `spring-boot-starter-security-test`가 있어야 한다. 이 모듈이 `@AutoConfigureMockMvc`에 보안 자동 설정을 넣는다. 없으면 `HttpSecurity` 빈도 `@AuthenticationPrincipal` 리졸버도 없다.
+- 인가 규칙과 401 형식은 auth에서 `@Import({SecurityConfig.class, JwtAuthenticationEntryPoint.class})` + `@MockitoBean JwtTokenAdapter`로 검증한다.
+- 다른 도메인의 컨트롤러 테스트는 auth를 import하지 않는다. `@AutoConfigureMockMvc(addFilters = false)`로 필터를 끄고 `SecurityContextHolder`에 `UsernamePasswordAuthenticationToken(userId, null, List.of())`을 직접 넣는다.
