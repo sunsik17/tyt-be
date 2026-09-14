@@ -25,3 +25,6 @@ replay_pid*
 
 # IntelliJ IDEA
 .idea/
+
+### local secrets ###
+.env

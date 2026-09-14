@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -17,9 +18,13 @@ import com.tyt.auth.application.AuthCommandService;
 import com.tyt.auth.application.dto.command.KakaoLoginCommand;
 import com.tyt.auth.application.dto.result.TokenResult;
 import com.tyt.auth.domain.exception.AuthErrorCode;
+import com.tyt.auth.infrastructure.config.SecurityConfig;
+import com.tyt.auth.infrastructure.jwt.JwtTokenAdapter;
+import com.tyt.auth.presentation.errorhandler.JwtAuthenticationEntryPoint;
 import com.tyt.common.exception.BusinessException;
 
 @WebMvcTest(AuthController.class)
+@Import({SecurityConfig.class, JwtAuthenticationEntryPoint.class})
 class AuthControllerTest {
 
 	private static final String URL = "/api/v1/auth/kakao/tokens";
@@ -30,7 +35,10 @@ class AuthControllerTest {
 	@MockitoBean
 	private AuthCommandService authCommandService;
 
-	@DisplayName("카카오 로그인에 성공하면 200과 토큰을 응답한다")
+	@MockitoBean
+	private JwtTokenAdapter jwtTokenAdapter;
+
+	@DisplayName("토큰 없이 카카오 로그인에 성공하면 200과 토큰을 응답한다")
 	@Test
 	void loginWithKakao() throws Exception {
 		given(authCommandService.loginWithKakao(new KakaoLoginCommand("kakao-token")))

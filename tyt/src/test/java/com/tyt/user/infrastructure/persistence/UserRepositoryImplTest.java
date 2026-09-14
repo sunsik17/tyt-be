@@ -2,11 +2,16 @@ package com.tyt.user.infrastructure.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.tyt.common.config.JpaAuditingConfig;
 import com.tyt.user.domain.model.User;
@@ -17,6 +22,11 @@ class UserRepositoryImplTest {
 
 	@Autowired
 	private UserRepositoryImpl userRepositoryImpl;
+
+	@AfterEach
+	void clearAuthentication() {
+		SecurityContextHolder.clearContext();
+	}
 
 	@DisplayName("저장하면 id가 부여된다")
 	@Test
@@ -35,7 +45,19 @@ class UserRepositoryImplTest {
 		assertThat(saved.getUpdatedAt()).isNotNull();
 	}
 
-	@DisplayName("인증이 없어 생성자·수정자는 비어 있다")
+	@DisplayName("인증된 요청에서 저장하면 생성자·수정자가 userId로 채워진다")
+	@Test
+	void actorFieldsArePopulatedWhenAuthenticated() {
+		SecurityContextHolder.getContext().setAuthentication(
+			new UsernamePasswordAuthenticationToken(1L, null, List.of()));
+
+		User saved = userRepositoryImpl.save(User.create());
+
+		assertThat(saved.getCreatedBy()).isEqualTo(1L);
+		assertThat(saved.getUpdatedBy()).isEqualTo(1L);
+	}
+
+	@DisplayName("인증 없이 저장하면 생성자·수정자는 비어 있다 (로그인 중 가입)")
 	@Test
 	void actorFieldsAreEmptyWithoutAuthentication() {
 		User saved = userRepositoryImpl.save(User.create());
