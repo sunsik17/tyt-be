@@ -58,6 +58,46 @@ class JwtTokenAdapterTest {
 			.isEqualTo(REFRESH_VALIDITY.toMillis());
 	}
 
+	@DisplayName("유효한 access 토큰이면 userId를 돌려준다")
+	@Test
+	void parseAccessToken() {
+		TokenResult tokens = jwtTokenAdapter.issue(1L);
+
+		assertThat(jwtTokenAdapter.parseAccessToken(tokens.accessToken())).contains(1L);
+	}
+
+	@DisplayName("refresh 토큰은 access 토큰으로 인정하지 않는다")
+	@Test
+	void parseRefreshTokenAsAccess() {
+		TokenResult tokens = jwtTokenAdapter.issue(1L);
+
+		assertThat(jwtTokenAdapter.parseAccessToken(tokens.refreshToken())).isEmpty();
+	}
+
+	@DisplayName("만료된 access 토큰은 인정하지 않는다")
+	@Test
+	void parseExpiredAccessToken() {
+		JwtTokenAdapter expiredIssuer =
+			new JwtTokenAdapter(new JwtProperties(SECRET, Duration.ofMinutes(-1), REFRESH_VALIDITY));
+
+		assertThat(jwtTokenAdapter.parseAccessToken(expiredIssuer.issue(1L).accessToken())).isEmpty();
+	}
+
+	@DisplayName("다른 키로 서명된 토큰은 인정하지 않는다")
+	@Test
+	void parseTokenSignedWithOtherKey() {
+		JwtTokenAdapter otherIssuer = new JwtTokenAdapter(
+			new JwtProperties("other-secret-key-must-be-at-least-32-bytes", ACCESS_VALIDITY, REFRESH_VALIDITY));
+
+		assertThat(jwtTokenAdapter.parseAccessToken(otherIssuer.issue(1L).accessToken())).isEmpty();
+	}
+
+	@DisplayName("JWT 형식이 아니면 인정하지 않는다")
+	@Test
+	void parseMalformedToken() {
+		assertThat(jwtTokenAdapter.parseAccessToken("not-a-jwt")).isEmpty();
+	}
+
 	private Claims parse(String token) {
 		return Jwts.parser()
 			.verifyWith(secretKey)
