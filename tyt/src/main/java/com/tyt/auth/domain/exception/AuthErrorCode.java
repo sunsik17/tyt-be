@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 public enum AuthErrorCode implements ErrorCode {
 
 	INVALID_SOCIAL_TOKEN(ErrorType.UNAUTHORIZED, "소셜 로그인 토큰이 유효하지 않습니다."),
+	UNAUTHENTICATED(ErrorType.UNAUTHORIZED, "인증이 필요합니다."),
 	INVALID_SOCIAL_ACCOUNT(ErrorType.INVALID, "소셜 계정 정보가 올바르지 않습니다.");
 
 	private final ErrorType errorType;
