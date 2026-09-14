@@ -98,6 +98,32 @@ class JwtTokenAdapterTest {
 		assertThat(jwtTokenAdapter.parseAccessToken("not-a-jwt")).isEmpty();
 	}
 
+	@DisplayName("유효한 refresh 토큰이면 userId를 돌려준다")
+	@Test
+	void parseRefreshToken() {
+		TokenResult tokens = jwtTokenAdapter.issue(1L);
+
+		assertThat(jwtTokenAdapter.parseRefreshToken(tokens.refreshToken())).contains(1L);
+	}
+
+	@DisplayName("access 토큰은 refresh 토큰으로 인정하지 않는다")
+	@Test
+	void parseAccessTokenAsRefresh() {
+		TokenResult tokens = jwtTokenAdapter.issue(1L);
+
+		assertThat(jwtTokenAdapter.parseRefreshToken(tokens.accessToken())).isEmpty();
+	}
+
+	@DisplayName("같은 사용자에게 연달아 발급해도 토큰이 매번 다르다")
+	@Test
+	void issuedTokensAreUnique() {
+		TokenResult first = jwtTokenAdapter.issue(1L);
+		TokenResult second = jwtTokenAdapter.issue(1L);
+
+		assertThat(second.accessToken()).isNotEqualTo(first.accessToken());
+		assertThat(second.refreshToken()).isNotEqualTo(first.refreshToken());
+	}
+
 	private Claims parse(String token) {
 		return Jwts.parser()
 			.verifyWith(secretKey)
