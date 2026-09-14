@@ -21,3 +21,5 @@ paths:
 - `@EnableJpaAuditing`은 `TytApplication`이 아니라 `common/config/JpaAuditingConfig`에 둔다. 메인 클래스에 붙이면 `@WebMvcTest`가 `jpaAuditingHandler`를 만들려다 "JPA metamodel must not be empty"로 실패한다.
 - 감사 필드를 검증하는 JPA 슬라이스 테스트는 `@Import`에 `JpaAuditingConfig`를 함께 넣는다.
 - `@WebMvcTest`는 `org.springframework.boot.webmvc.test.autoconfigure`에 있고 스타터는 `spring-boot-starter-webmvc-test`. Service는 `@MockitoBean`으로 대체한다.
+- 테스트는 Gradle에서 `spring.profiles.active=test`로 돈다(build.gradle의 `systemProperty`). 운영에서 환경변수로 받는 설정값(`KAKAO_APP_ID`, `JWT_SECRET`)은 `src/test/resources/application-test.yaml`에 테스트용 값을 둔다. 새 환경변수를 추가하면 여기에도 넣어야 `contextLoads`가 뜬다.
+- 외부 API adapter는 슬라이스 없이 `MockRestServiceServer.bindTo(RestClient.Builder)`로 테스트한다.
