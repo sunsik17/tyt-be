@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.tyt.auth.application.AuthCommandService;
 import com.tyt.auth.application.dto.command.KakaoLoginCommand;
+import com.tyt.auth.application.dto.command.ReissueTokenCommand;
 import com.tyt.auth.application.dto.result.TokenResult;
 import com.tyt.auth.domain.exception.AuthErrorCode;
 import com.tyt.auth.infrastructure.config.SecurityConfig;
@@ -28,6 +29,7 @@ import com.tyt.common.exception.BusinessException;
 class AuthControllerTest {
 
 	private static final String URL = "/api/v1/auth/kakao/tokens";
+	private static final String REISSUE_URL = "/api/v1/auth/tokens";
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -74,5 +76,43 @@ class AuthControllerTest {
 				.content("{\"accessToken\":\"kakao-token\"}"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("INVALID_SOCIAL_TOKEN"));
+	}
+
+	@DisplayName("토큰 없이 refresh 토큰으로 재발급에 성공하면 200과 새 토큰을 응답한다")
+	@Test
+	void reissue() throws Exception {
+		given(authCommandService.reissue(new ReissueTokenCommand("old-refresh")))
+			.willReturn(new TokenResult("new-access", "new-refresh"));
+
+		mockMvc.perform(post(REISSUE_URL)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"refreshToken\":\"old-refresh\"}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.code").value("TOKEN_REISSUED"))
+			.andExpect(jsonPath("$.data.accessToken").value("new-access"))
+			.andExpect(jsonPath("$.data.refreshToken").value("new-refresh"));
+	}
+
+	@DisplayName("refresh 토큰이 비어 있으면 400")
+	@Test
+	void reissueWithBlankToken() throws Exception {
+		mockMvc.perform(post(REISSUE_URL)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"refreshToken\":\"\"}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+	}
+
+	@DisplayName("refresh 토큰이 유효하지 않으면 401 INVALID_REFRESH_TOKEN")
+	@Test
+	void reissueWithInvalidToken() throws Exception {
+		given(authCommandService.reissue(new ReissueTokenCommand("old-refresh")))
+			.willThrow(new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN));
+
+		mockMvc.perform(post(REISSUE_URL)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"refreshToken\":\"old-refresh\"}"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("INVALID_REFRESH_TOKEN"));
 	}
 }

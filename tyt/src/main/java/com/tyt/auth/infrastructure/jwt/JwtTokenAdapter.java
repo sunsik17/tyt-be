@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
@@ -51,6 +52,15 @@ public class JwtTokenAdapter implements AuthTokenPort {
 	 * 서명 불일치, 만료, 형식 오류, refresh 토큰이면 비어 있다.
 	 */
 	public Optional<Long> parseAccessToken(String token) {
+		return parse(token, ACCESS_TYPE);
+	}
+
+	@Override
+	public Optional<Long> parseRefreshToken(String refreshToken) {
+		return parse(refreshToken, REFRESH_TYPE);
+	}
+
+	private Optional<Long> parse(String token, String expectedType) {
 		try {
 			Claims claims = Jwts.parser()
 				.verifyWith(secretKey)
@@ -58,7 +68,7 @@ public class JwtTokenAdapter implements AuthTokenPort {
 				.parseSignedClaims(token)
 				.getPayload();
 
-			if (!ACCESS_TYPE.equals(claims.get(TYPE_CLAIM, String.class))) {
+			if (!expectedType.equals(claims.get(TYPE_CLAIM, String.class))) {
 				return Optional.empty();
 			}
 			return Optional.of(Long.valueOf(claims.getSubject()));
@@ -67,8 +77,13 @@ public class JwtTokenAdapter implements AuthTokenPort {
 		}
 	}
 
+	/**
+	 * jti를 넣어 같은 초에 발급해도 토큰이 달라지게 한다.
+	 * 없으면 로그인 직후 재발급한 refresh가 이전 것과 같아져 rotation이 무의미해진다.
+	 */
 	private String createToken(Long userId, String type, Date issuedAt, Duration validity) {
 		return Jwts.builder()
+			.id(UUID.randomUUID().toString())
 			.subject(String.valueOf(userId))
 			.claim(TYPE_CLAIM, type)
 			.issuedAt(issuedAt)
