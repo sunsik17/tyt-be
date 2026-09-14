@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.tyt.auth.application.dto.command.KakaoLoginCommand;
+import com.tyt.auth.application.dto.command.ReissueTokenCommand;
 import com.tyt.auth.application.dto.result.TokenResult;
 import com.tyt.auth.application.port.out.AuthTokenPort;
 import com.tyt.auth.application.port.out.RefreshTokenPort;
@@ -100,6 +101,57 @@ class AuthCommandServiceTest {
 			.isEqualTo(AuthErrorCode.INVALID_SOCIAL_TOKEN);
 
 		verify(userRegistrationPort, never()).register();
+		verify(authTokenPort, never()).issue(any());
+		verify(refreshTokenPort, never()).save(any(), any());
+	}
+
+	@DisplayName("저장된 refresh 토큰과 같으면 새 토큰을 발급하고 새 refresh를 저장한다")
+	@Test
+	void reissue() {
+		given(authTokenPort.parseRefreshToken("old-refresh")).willReturn(Optional.of(1L));
+		given(refreshTokenPort.consume(1L)).willReturn(Optional.of("old-refresh"));
+		given(authTokenPort.issue(1L)).willReturn(tokens);
+
+		TokenResult result = authCommandService.reissue(new ReissueTokenCommand("old-refresh"));
+
+		assertThat(result).isEqualTo(tokens);
+		verify(refreshTokenPort).save(1L, "refresh");
+	}
+
+	@DisplayName("refresh 토큰이 유효하지 않으면 저장소를 건드리지 않고 INVALID_REFRESH_TOKEN")
+	@Test
+	void reissueWithInvalidToken() {
+		given(authTokenPort.parseRefreshToken("invalid")).willReturn(Optional.empty());
+
+		assertInvalidRefreshToken("invalid");
+
+		verify(refreshTokenPort, never()).consume(any());
+	}
+
+	@DisplayName("저장된 refresh 토큰이 없으면 INVALID_REFRESH_TOKEN")
+	@Test
+	void reissueWithoutStoredToken() {
+		given(authTokenPort.parseRefreshToken("old-refresh")).willReturn(Optional.of(1L));
+		given(refreshTokenPort.consume(1L)).willReturn(Optional.empty());
+
+		assertInvalidRefreshToken("old-refresh");
+	}
+
+	@DisplayName("이미 교체된 refresh 토큰이면 INVALID_REFRESH_TOKEN")
+	@Test
+	void reissueWithRotatedToken() {
+		given(authTokenPort.parseRefreshToken("rotated-refresh")).willReturn(Optional.of(1L));
+		given(refreshTokenPort.consume(1L)).willReturn(Optional.of("current-refresh"));
+
+		assertInvalidRefreshToken("rotated-refresh");
+	}
+
+	private void assertInvalidRefreshToken(String refreshToken) {
+		assertThatThrownBy(() -> authCommandService.reissue(new ReissueTokenCommand(refreshToken)))
+			.isInstanceOf(BusinessException.class)
+			.extracting(e -> ((BusinessException)e).getErrorCode())
+			.isEqualTo(AuthErrorCode.INVALID_REFRESH_TOKEN);
+
 		verify(authTokenPort, never()).issue(any());
 		verify(refreshTokenPort, never()).save(any(), any());
 	}

@@ -9,7 +9,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum AuthSuccessCode implements SuccessCode {
 
-	LOGIN_SUCCESS("로그인했습니다.");
+	LOGIN_SUCCESS("로그인했습니다."),
+	TOKEN_REISSUED("토큰을 재발급했습니다.");
 
 	private final String message;
 }
