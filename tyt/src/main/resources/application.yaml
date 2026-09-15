@@ -17,6 +17,8 @@ spring:
 
 kakao:
   app-id: ${KAKAO_APP_ID}
+  # 서버에서만 쓰는 비밀값. 탈퇴할 때 카카오 연결 끊기에 쓴다
+  admin-key: ${KAKAO_ADMIN_KEY}
 
 jwt:
   secret: ${JWT_SECRET}

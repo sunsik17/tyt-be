@@ -7,4 +7,10 @@ public interface SocialAuthPort {
 	 * 유효하지 않으면 BusinessException(INVALID_SOCIAL_TOKEN).
 	 */
 	String getKakaoId(String accessToken);
+
+	/**
+	 * 카카오 회원번호의 앱 연결을 끊는다. 이미 끊긴 사용자면 성공으로 본다.
+	 * 실패하면 BusinessException(SOCIAL_UNLINK_FAILED).
+	 */
+	void unlinkKakao(String kakaoId);
 }
