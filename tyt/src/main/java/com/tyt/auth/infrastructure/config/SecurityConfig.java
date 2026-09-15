@@ -30,6 +30,8 @@ public class SecurityConfig {
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers("/api/v1/auth/**").permitAll()
+				// API 문서. 운영 프로파일에서는 springdoc을 꺼서 이 경로 자체가 없어진다
+				.requestMatchers("/v3/api-docs/**", "/v3/api-docs.yaml", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 				.anyRequest().authenticated())
 			.exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
 			.addFilterBefore(new JwtAuthenticationFilter(jwtTokenAdapter), UsernamePasswordAuthenticationFilter.class)

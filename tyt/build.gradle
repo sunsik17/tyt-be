@@ -25,6 +25,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
@@ -46,4 +47,10 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
     systemProperty 'spring.profiles.active', 'test'
+    // 테스트는 main()을 거치지 않으므로 운영과 같은 한국 시간으로 JVM을 띄운다
+    systemProperty 'user.timezone', 'Asia/Seoul'
+    // OpenApiSpecTest가 비교하는 스펙 파일이나 갱신 여부만 바뀌어도 테스트가 up-to-date로 건너뛰지 않게 한다
+    // inputs.file은 optional()이어도 파일이 없으면 태스크를 시작하지 않는다. 없는 파일을 허용하는 inputs.files를 쓴다
+    inputs.files('../docs/openapi.yaml').withPropertyName('openApiSpec')
+    inputs.property('openApiUpdate', System.getenv('OPENAPI_UPDATE') ?: 'false')
 }
