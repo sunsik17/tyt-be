@@ -1,7 +1,9 @@
 package com.tyt.auth.infrastructure.config;
 
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -65,5 +68,23 @@ class SecurityConfigTest {
 
 		mockMvc.perform(get(PROTECTED_URL).header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
 			.andExpect(status().isNotFound());
+	}
+
+	@DisplayName("로그인과 재발급은 토큰 없이 호출할 수 있다")
+	@Test
+	void loginAndReissueArePublic() throws Exception {
+		mockMvc.perform(post("/api/v1/auth/kakao/tokens").contentType(MediaType.APPLICATION_JSON).content("{}"))
+			.andExpect(status().isBadRequest());
+		mockMvc.perform(post("/api/v1/auth/tokens").contentType(MediaType.APPLICATION_JSON).content("{}"))
+			.andExpect(status().isBadRequest());
+	}
+
+	@DisplayName("같은 auth 경로라도 로그아웃과 탈퇴는 토큰이 없으면 401")
+	@Test
+	void logoutAndWithdrawRequireToken() throws Exception {
+		mockMvc.perform(delete("/api/v1/auth/tokens"))
+			.andExpect(status().isUnauthorized());
+		mockMvc.perform(delete("/api/v1/auth/accounts/me"))
+			.andExpect(status().isUnauthorized());
 	}
 }
