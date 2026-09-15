@@ -1,5 +1,6 @@
 package com.tyt.auth.infrastructure.persistence;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -22,7 +23,17 @@ public class SocialAccountRepositoryImpl implements SocialAccountRepository {
 	}
 
 	@Override
+	public List<SocialAccount> findAllByUserId(Long userId) {
+		return socialAccountJpaRepository.findAllByUserId(userId);
+	}
+
+	@Override
 	public SocialAccount save(SocialAccount socialAccount) {
 		return socialAccountJpaRepository.save(socialAccount);
+	}
+
+	@Override
+	public void deleteAll(List<SocialAccount> socialAccounts) {
+		socialAccountJpaRepository.deleteAll(socialAccounts);
 	}
 }

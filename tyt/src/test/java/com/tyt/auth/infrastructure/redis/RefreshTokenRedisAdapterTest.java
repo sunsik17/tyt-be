@@ -86,4 +86,14 @@ class RefreshTokenRedisAdapterTest {
 	void consumeNothing() {
 		assertThat(refreshTokenRedisAdapter.consume(1L)).isEmpty();
 	}
+
+	@DisplayName("refresh 토큰을 지우면 꺼낼 수 없다")
+	@Test
+	void delete() {
+		refreshTokenRedisAdapter.save(1L, "refresh-token");
+
+		refreshTokenRedisAdapter.delete(1L);
+
+		assertThat(refreshTokenRedisAdapter.consume(1L)).isEmpty();
+	}
 }

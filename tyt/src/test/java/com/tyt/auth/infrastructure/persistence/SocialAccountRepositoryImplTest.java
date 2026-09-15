@@ -2,6 +2,7 @@ package com.tyt.auth.infrastructure.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
@@ -36,5 +37,20 @@ class SocialAccountRepositoryImplTest {
 	@Test
 	void findNothing() {
 		assertThat(socialAccountRepositoryImpl.findByProviderAndSocialId(SocialProvider.KAKAO, "없는id")).isEmpty();
+	}
+
+	@DisplayName("사용자의 소셜 계정만 모두 찾아 지운다")
+	@Test
+	void findAllByUserIdAndDeleteAll() {
+		socialAccountRepositoryImpl.save(SocialAccount.create(SocialProvider.KAKAO, "12345", 1L));
+		socialAccountRepositoryImpl.save(SocialAccount.create(SocialProvider.KAKAO, "67890", 2L));
+
+		List<SocialAccount> socialAccounts = socialAccountRepositoryImpl.findAllByUserId(1L);
+		assertThat(socialAccounts).extracting(SocialAccount::getSocialId).containsExactly("12345");
+
+		socialAccountRepositoryImpl.deleteAll(socialAccounts);
+
+		assertThat(socialAccountRepositoryImpl.findAllByUserId(1L)).isEmpty();
+		assertThat(socialAccountRepositoryImpl.findAllByUserId(2L)).hasSize(1);
 	}
 }

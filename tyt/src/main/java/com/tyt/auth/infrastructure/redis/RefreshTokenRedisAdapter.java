@@ -31,4 +31,9 @@ public class RefreshTokenRedisAdapter implements RefreshTokenPort {
 	public Optional<String> consume(Long userId) {
 		return Optional.ofNullable(redisTemplate.opsForValue().getAndDelete(KEY_PREFIX + userId));
 	}
+
+	@Override
+	public void delete(Long userId) {
+		redisTemplate.delete(KEY_PREFIX + userId);
+	}
 }
