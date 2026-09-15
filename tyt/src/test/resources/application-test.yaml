@@ -1,5 +1,6 @@
 kakao:
   app-id: 1
+  admin-key: test-admin-key
 
 jwt:
   secret: test-secret-key-must-be-at-least-32-bytes-long

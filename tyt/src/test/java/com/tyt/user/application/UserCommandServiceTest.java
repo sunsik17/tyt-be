@@ -38,4 +38,12 @@ class UserCommandServiceTest {
 		assertThat(result.id()).isEqualTo(1L);
 		verify(userRepository).save(any(User.class));
 	}
+
+	@DisplayName("사용자를 삭제한다")
+	@Test
+	void delete() {
+		userCommandService.delete(1L);
+
+		verify(userRepository).deleteById(1L);
+	}
 }

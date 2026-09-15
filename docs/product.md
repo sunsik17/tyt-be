@@ -28,7 +28,7 @@
 | 클라이언트 | 모바일 앱 |
 
 MVP 기능
-1. 인증
+1. 인증 (카카오 로그인, 로그아웃, 탈퇴)
 2. 장소 검색 (출발지·도착지 입력 수단)
 3. 일정 생성 — 새로 만들거나 기록에서 복제
 4. 기록 조회 (자주 쓴 순)
@@ -112,6 +112,7 @@ schedule  Schedule(aggregate), 기록 조회, 여유 계산
 - 여유 계산은 `schedule` 안에 둔다. 계산 입력이 전부 `Schedule`에 있어서, 밖으로 빼면 도메인 간 참조만 늘어난다.
 - 이동 시간 조회와 장소 검색은 도메인이 아니다. `schedule/application/port/out`의 Port ← `schedule/infrastructure/client`의 adapter.
 - 알림을 도입하면 `notification` 도메인이 생긴다. 그때 여유 소진 알림은 **이벤트가 아니라 UseCase 직접 호출**로 한다. AFTER_COMMIT 이벤트는 수신 실패 시 유실되는데, 이 알림이 유실되면 기능이 존재할 이유가 없어진다.
+- 탈퇴는 auth가 맡는다(`DELETE /api/v1/auth/accounts/me`). 의존 방향을 auth -> user 한쪽으로 유지하기 위해서다. App Store 심사 기준상 개인정보까지 삭제해야 하므로 완전 삭제한다. **사용자 데이터를 가진 도메인이 새로 생기면 탈퇴 흐름에서 그 데이터도 함께 지워야 한다.**
 
 ## 외부 의존
 

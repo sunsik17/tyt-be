@@ -13,4 +13,9 @@ public interface RefreshTokenPort {
 	 * 저장된 refresh 토큰을 꺼내면서 지운다. 원자적이라 같은 토큰으로 동시에 재발급해도 하나만 성공한다.
 	 */
 	Optional<String> consume(Long userId);
+
+	/**
+	 * 저장된 refresh 토큰을 지운다. 없으면 아무것도 하지 않는다.
+	 */
+	void delete(Long userId);
 }

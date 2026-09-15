@@ -1,6 +1,7 @@
 package com.tyt.user.infrastructure.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import java.util.List;
 
@@ -64,5 +65,21 @@ class UserRepositoryImplTest {
 
 		assertThat(saved.getCreatedBy()).isNull();
 		assertThat(saved.getUpdatedBy()).isNull();
+	}
+
+	@DisplayName("사용자를 삭제하면 더 이상 찾을 수 없다")
+	@Test
+	void deleteById() {
+		User saved = userRepositoryImpl.save(User.create());
+
+		userRepositoryImpl.deleteById(saved.getId());
+
+		assertThat(userRepositoryImpl.findById(saved.getId())).isEmpty();
+	}
+
+	@DisplayName("없는 사용자를 삭제해도 예외가 나지 않는다 (탈퇴 재시도)")
+	@Test
+	void deleteMissingUser() {
+		assertThatCode(() -> userRepositoryImpl.deleteById(999L)).doesNotThrowAnyException();
 	}
 }
