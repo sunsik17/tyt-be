@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +25,7 @@ import com.tyt.auth.application.dto.result.TokenResult;
 import com.tyt.auth.application.port.out.AuthTokenPort;
 import com.tyt.auth.application.port.out.RefreshTokenPort;
 import com.tyt.auth.application.port.out.SocialAuthPort;
+import com.tyt.auth.application.port.out.UserDeletionPort;
 import com.tyt.auth.application.port.out.UserRegistrationPort;
 import com.tyt.auth.domain.constants.SocialProvider;
 import com.tyt.auth.domain.exception.AuthErrorCode;
@@ -41,6 +44,9 @@ class AuthCommandServiceTest {
 
 	@Mock
 	private UserRegistrationPort userRegistrationPort;
+
+	@Mock
+	private UserDeletionPort userDeletionPort;
 
 	@Mock
 	private AuthTokenPort authTokenPort;
@@ -154,5 +160,44 @@ class AuthCommandServiceTest {
 
 		verify(authTokenPort, never()).issue(any());
 		verify(refreshTokenPort, never()).save(any(), any());
+	}
+
+	@DisplayName("로그아웃하면 저장된 refresh 토큰을 지운다")
+	@Test
+	void logout() {
+		authCommandService.logout(1L);
+
+		verify(refreshTokenPort).delete(1L);
+	}
+
+	@DisplayName("탈퇴하면 카카오 연결을 끊고 소셜 계정·사용자·refresh 토큰을 지운다")
+	@Test
+	void withdraw() {
+		List<SocialAccount> socialAccounts = List.of(SocialAccount.create(SocialProvider.KAKAO, "12345", 1L));
+		given(socialAccountRepository.findAllByUserId(1L)).willReturn(socialAccounts);
+
+		authCommandService.withdraw(1L);
+
+		verify(socialAuthPort).unlinkKakao("12345");
+		verify(socialAccountRepository).deleteAll(socialAccounts);
+		verify(userDeletionPort).delete(1L);
+		verify(refreshTokenPort).delete(1L);
+	}
+
+	@DisplayName("카카오 연결 끊기에 실패하면 아무것도 지우지 않는다")
+	@Test
+	void withdrawWhenUnlinkFails() {
+		given(socialAccountRepository.findAllByUserId(1L))
+			.willReturn(List.of(SocialAccount.create(SocialProvider.KAKAO, "12345", 1L)));
+		willThrow(new BusinessException(AuthErrorCode.SOCIAL_UNLINK_FAILED)).given(socialAuthPort).unlinkKakao("12345");
+
+		assertThatThrownBy(() -> authCommandService.withdraw(1L))
+			.isInstanceOf(BusinessException.class)
+			.extracting(e -> ((BusinessException)e).getErrorCode())
+			.isEqualTo(AuthErrorCode.SOCIAL_UNLINK_FAILED);
+
+		verify(socialAccountRepository, never()).deleteAll(any());
+		verify(userDeletionPort, never()).delete(any());
+		verify(refreshTokenPort, never()).delete(any());
 	}
 }

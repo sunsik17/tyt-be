@@ -1,5 +1,7 @@
 package com.tyt.auth.application;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,6 +11,7 @@ import com.tyt.auth.application.dto.result.TokenResult;
 import com.tyt.auth.application.port.out.AuthTokenPort;
 import com.tyt.auth.application.port.out.RefreshTokenPort;
 import com.tyt.auth.application.port.out.SocialAuthPort;
+import com.tyt.auth.application.port.out.UserDeletionPort;
 import com.tyt.auth.application.port.out.UserRegistrationPort;
 import com.tyt.auth.domain.constants.SocialProvider;
 import com.tyt.auth.domain.exception.AuthErrorCode;
@@ -25,6 +28,7 @@ public class AuthCommandService {
 	private final SocialAuthPort socialAuthPort;
 	private final SocialAccountRepository socialAccountRepository;
 	private final UserRegistrationPort userRegistrationPort;
+	private final UserDeletionPort userDeletionPort;
 	private final AuthTokenPort authTokenPort;
 	private final RefreshTokenPort refreshTokenPort;
 
@@ -51,6 +55,27 @@ public class AuthCommandService {
 		}
 
 		return issueTokens(userId);
+	}
+
+	/**
+	 * access 토큰은 서명만 확인하므로 만료(최대 30분)까지 유효하다. 재발급을 막기 위해 refresh 토큰을 지운다.
+	 */
+	public void logout(Long userId) {
+		refreshTokenPort.delete(userId);
+	}
+
+	/**
+	 * 카카오 연결을 먼저 끊고 데이터를 지운다. 연결 끊기가 실패하면 아무것도 지우지 않아 다시 시도할 수 있다.
+	 * 연결은 끊겼는데 삭제가 실패해도, 다시 시도하면 이미 끊긴 연결은 성공으로 보고 삭제를 이어간다.
+	 */
+	@Transactional
+	public void withdraw(Long userId) {
+		List<SocialAccount> socialAccounts = socialAccountRepository.findAllByUserId(userId);
+		socialAccounts.forEach(socialAccount -> socialAuthPort.unlinkKakao(socialAccount.getSocialId()));
+
+		socialAccountRepository.deleteAll(socialAccounts);
+		userDeletionPort.delete(userId);
+		refreshTokenPort.delete(userId);
 	}
 
 	private Long registerKakaoAccount(String kakaoId) {

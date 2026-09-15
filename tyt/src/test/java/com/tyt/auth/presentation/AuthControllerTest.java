@@ -1,15 +1,21 @@
 package com.tyt.auth.presentation;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,6 +36,8 @@ class AuthControllerTest {
 
 	private static final String URL = "/api/v1/auth/kakao/tokens";
 	private static final String REISSUE_URL = "/api/v1/auth/tokens";
+	private static final String LOGOUT_URL = "/api/v1/auth/tokens";
+	private static final String WITHDRAW_URL = "/api/v1/auth/accounts/me";
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -114,5 +122,56 @@ class AuthControllerTest {
 				.content("{\"refreshToken\":\"old-refresh\"}"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("INVALID_REFRESH_TOKEN"));
+	}
+
+	@DisplayName("로그아웃하면 200 LOGGED_OUT")
+	@Test
+	void logout() throws Exception {
+		given(jwtTokenAdapter.parseAccessToken("access-token")).willReturn(Optional.of(1L));
+
+		mockMvc.perform(delete(LOGOUT_URL).header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.code").value("LOGGED_OUT"));
+
+		verify(authCommandService).logout(1L);
+	}
+
+	@DisplayName("토큰 없이 로그아웃하면 401 UNAUTHENTICATED")
+	@Test
+	void logoutWithoutToken() throws Exception {
+		mockMvc.perform(delete(LOGOUT_URL))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
+	}
+
+	@DisplayName("탈퇴하면 200 ACCOUNT_DELETED")
+	@Test
+	void withdraw() throws Exception {
+		given(jwtTokenAdapter.parseAccessToken("access-token")).willReturn(Optional.of(1L));
+
+		mockMvc.perform(delete(WITHDRAW_URL).header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.code").value("ACCOUNT_DELETED"));
+
+		verify(authCommandService).withdraw(1L);
+	}
+
+	@DisplayName("카카오 연결 끊기에 실패하면 500 SOCIAL_UNLINK_FAILED")
+	@Test
+	void withdrawWhenUnlinkFails() throws Exception {
+		given(jwtTokenAdapter.parseAccessToken("access-token")).willReturn(Optional.of(1L));
+		willThrow(new BusinessException(AuthErrorCode.SOCIAL_UNLINK_FAILED)).given(authCommandService).withdraw(1L);
+
+		mockMvc.perform(delete(WITHDRAW_URL).header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+			.andExpect(status().isInternalServerError())
+			.andExpect(jsonPath("$.code").value("SOCIAL_UNLINK_FAILED"));
+	}
+
+	@DisplayName("토큰 없이 탈퇴하면 401 UNAUTHENTICATED")
+	@Test
+	void withdrawWithoutToken() throws Exception {
+		mockMvc.perform(delete(WITHDRAW_URL))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
 	}
 }
