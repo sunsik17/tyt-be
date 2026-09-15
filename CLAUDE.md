@@ -10,6 +10,7 @@ CLAUDE.md
 - 빌드/테스트: `tyt/`에서 `./gradlew build`, `./gradlew test`
 - base package: `com.tyt`
 - 들여쓰기는 tab
+- 시간대는 Asia/Seoul. `TytApplication.main`에서 JVM 기본 시간대를 고정하고, 시간 값은 오프셋 없는 `LocalDateTime`으로 주고받는다
 - 도메인별 DDD 4계층, application·domain ↔ infrastructure는 반드시 DIP. 상세 규칙:
   - `.claude/rules/package-structure.md` (항상 로드)
   - `.claude/rules/api.md` (presentation 작업 시 로드)
