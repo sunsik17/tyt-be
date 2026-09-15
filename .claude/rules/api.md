@@ -22,7 +22,8 @@ paths:
 - 반환 타입은 `ResponseEntity<ApiResponse<XxxResponse>>`. Entity나 Result를 그대로 반환하지 않는다.
 - 요청은 `@Valid` + Request record의 Bean Validation으로 형식만 검증한다. 비즈니스 규칙 검증은 domain에서 한다.
 - 인증 주체는 `@AuthenticationPrincipal Long userId`로 받는다. JWT 필터가 principal에 userId(Long)를 넣는다.
-  - 공개 경로(`/api/v1/auth/**`)에서는 principal이 `"anonymousUser"`라 null이 들어온다. 타입이 맞지 않아도 예외 없이 null이므로 공개 경로에서는 쓰지 않는다.
+  - 공개 경로(`POST /api/v1/auth/kakao/tokens`, `POST /api/v1/auth/tokens`)에서는 principal이 `"anonymousUser"`라 null이 들어온다. 타입이 맞지 않아도 예외 없이 null이므로 공개 경로에서는 쓰지 않는다.
+  - 토큰 없이 호출하는 엔드포인트는 `SecurityConfig`에서 HTTP 메서드와 경로를 정확히 지정해 연다. `/api/v1/auth/**`처럼 prefix 전체를 열면 같은 prefix에 생긴 인증 필요 API까지 열린다.
   - principal을 Long으로 두는 이유: 전용 타입을 auth에 두면 다른 도메인 컨트롤러가 auth를 import하게 된다. 역할 등 담을 정보가 늘면 principal 타입을 `common`에 둔다.
 
 ## 응답과 예외
@@ -38,7 +39,7 @@ FE가 `docs/openapi.yaml`과 `docs/api-guide.md`만 보고 화면을 만들 수 
 
 - 컨트롤러에는 springdoc 애노테이션을 단다: `@Tag`, `@Operation(summary, description)`, 응답 코드별 `@ApiResponses`(code, 발생 조건, 화면에서 할 일, 에러 예시).
   - `@ApiResponse` 애노테이션은 `common.web.ApiResponse`와 이름이 겹쳐 `io.swagger.v3.oas.annotations.responses.ApiResponse`로 풀어 쓴다.
-  - 토큰 없이 호출하는 컨트롤러는 `@SecurityRequirements`로 전역 bearer 요구를 지운다.
+  - 토큰 없이 호출하는 엔드포인트는 메서드에 `@SecurityRequirements`를 달아 전역 bearer 요구를 지운다. 같은 컨트롤러에 인증이 필요한 엔드포인트가 섞이므로 클래스에 달지 않는다.
 - Request/Response record 필드에는 `@Schema(description, example)`을 단다.
 - API를 바꾸면 같은 PR에서 `OPENAPI_UPDATE=true ./gradlew test --tests '*OpenApiSpecTest'`로 `docs/openapi.yaml`을 다시 만들어 커밋한다. 코드와 다르면 빌드가 실패한다.
 - 여러 호출에 걸친 흐름, 공통 규칙, 화면별로 쓰는 API가 바뀌면 `docs/api-guide.md`도 고친다. 이건 빌드가 잡지 못한다.
