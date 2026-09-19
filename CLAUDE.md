@@ -11,6 +11,7 @@ CLAUDE.md
 - base package: `com.tyt`
 - 들여쓰기는 tab
 - 시간대는 Asia/Seoul. `TytApplication.main`에서 JVM 기본 시간대를 고정하고, 시간 값은 오프셋 없는 `LocalDateTime`으로 주고받는다
+- 이 저장소에서는 BE만 작업한다. FE(tyt-fe)는 따로 작업하며 여기서 수정하지 않는다. FE에 필요한 내용은 `docs/openapi.yaml`과 `docs/api-guide.md`로만 전달한다(`.claude/rules/api.md`의 문서 절)
 - 도메인별 DDD 4계층, application·domain ↔ infrastructure는 반드시 DIP. 상세 규칙:
   - `.claude/rules/package-structure.md` (항상 로드)
   - `.claude/rules/api.md` (presentation 작업 시 로드)

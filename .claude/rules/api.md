@@ -35,7 +35,21 @@ paths:
 
 ## 문서
 
-FE가 `docs/openapi.yaml`과 `docs/api-guide.md`만 보고 화면을 만들 수 있어야 한다.
+FE는 이 저장소를 보지 않고 따로 작업한다. FE에 전하는 것은 `docs/openapi.yaml`과 `docs/api-guide.md` 두 문서뿐이므로, 두 문서만 보고 화면을 만들 수 있어야 한다. 문서에 없는 것은 FE가 추측하게 되고, 추측은 틀린다.
+
+### 엔드포인트마다 빠짐없이 적는 것
+
+- 무엇을 하는 API이고, 어느 화면에서 언제 부르는지
+- 요청 필드마다: 의미, 형식과 단위(분, 한국 시간 ISO-8601 등), 필수 여부, 허용 범위나 길이, 예시
+- 응답 필드마다: 의미, 형식과 단위, null이 될 수 있는지와 그때의 뜻, 예시
+- enum과 상태 코드는 값마다 뜻과 화면에서 보여줄 것
+- 목록이면 정렬 기준, 개수 제한, 비어 있을 때의 응답
+- 날 수 있는 에러마다: HTTP 상태, code, 발생 조건, 화면에서 할 일, 예시 JSON
+- 인증이 필요한지
+- 같은 요청을 다시 보내도 되는지 (재시도하거나 두 번 눌렸을 때 어떻게 되는지)
+
+### 작성 방법
+
 
 - 컨트롤러에는 springdoc 애노테이션을 단다: `@Tag`, `@Operation(summary, description)`, 응답 코드별 `@ApiResponses`(code, 발생 조건, 화면에서 할 일, 에러 예시).
   - `@ApiResponse` 애노테이션은 `common.web.ApiResponse`와 이름이 겹쳐 `io.swagger.v3.oas.annotations.responses.ApiResponse`로 풀어 쓴다.
